@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
   struct node **circuit;
   struct node* n;
   int index = 0;
-  circuit = (struct node**)malloc(sizeof(struct node*) * 50);
+  
     
   /*Try to open the AC file*/
   if (argc < 2) {
@@ -57,8 +57,10 @@ int main(int argc, char** argv) {
   }
     
   /*File was successfully read*/
+  /*Allocate memory for the circuit*/
+  circuit = (struct node**)malloc(sizeof(struct node*) * 50);
   while (fgets(lineToRead, 5000, ac_file) != NULL) {
-    printf("%s", lineToRead);
+    //printf("%s", lineToRead);
     
         
     if (*lineToRead == '(') {
@@ -69,7 +71,6 @@ int main(int argc, char** argv) {
 	/*Leaf node (Constant)*/
 	/*Insert node into circuit*/
 	n = (struct node*)malloc(sizeof(struct node));
-	//n->index = index;
 	sscanf(lineToRead, "%s %lf", &(n->nodeType), &(n->vr));
 	//printf("in: %c, val: %lf \n", n->nodeType, n->vr);
       }
@@ -102,16 +103,16 @@ int main(int argc, char** argv) {
     }
     
     if (*lineToRead == 'E') {
-      //printf("done");
+      printf("... finished reading AC file ... \n");
       index--;
     }
   }
 
   /*Print out circuit output*/
-  printf("\noutput %lf\n", circuit[index]->vr);
+  printf("output %lf\n", circuit[index]->vr);
   
   /*Free all nodes and circuit*/
-  for (int i = 0; i < index - 1; i++) {
+  for (int i = 0; i < index; i++) {
     //printf("%d\n", i);	    
     free(circuit[i]);
   }
