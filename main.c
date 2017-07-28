@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   /*Allocate memory for the circuit*/
   circuit = (struct node**)malloc(sizeof(struct node*) * 50);
   while (fgets(lineToRead, 5000, ac_file) != NULL) {
-    //printf("%s", lineToRead);
+    printf("%s", lineToRead);
     
         
     if (*lineToRead == '(') {
@@ -72,32 +72,82 @@ int main(int argc, char** argv) {
 	/*Insert node into circuit*/
 	n = (struct node*)malloc(sizeof(struct node));
 	sscanf(lineToRead, "%s %lf", &(n->nodeType), &(n->vr));
+	n->flag = false;
 	//printf("in: %c, val: %lf \n", n->nodeType, n->vr);
       }
       else if (*lineToRead == 'v') {
 	/*Leaf node (Variable)*/
 	n = (struct node*)malloc(sizeof(struct node));
 	sscanf(lineToRead, "%s %d %lf", &(n->nodeType), &(n->index), &(n->vr));
+	n->flag = false;
 	//printf("in: %c %d, val: %lf \n", n->nodeType, n->index, n->vr);
       }
       else if (*lineToRead == '+') {
 	/*Non-leaf (Operation)*/
 	n = (struct node*)malloc(sizeof(struct node));
+	/*"n->child" stores the index of the children nodes in the circuit*/
 	sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1]));
-
-	/*n->child stores the index of the children nodes in the circuit*/
-	n->vr = circuit[n->child[0]]->vr + circuit[n->child[1]]->vr;
+	n->flag = false;
+	n->vr = 0;
+	
+	/*Only add values if the flag is down*/
+	if (!circuit[n->child[0]]->flag) {
+	  n->vr += circuit[n->child[0]]->vr;
+	}
+	if (!circuit[n->child[1]]->flag) {
+	  n->vr += circuit[n->child[1]]->vr;
+	}
+	//n->vr = circuit[n->child[0]]->vr + circuit[n->child[1]]->vr;
 	//printf("in: %c %d, val: %lf \n", n->nodeType, n->index, n->vr);
       }
       else if (*lineToRead == '*') {
 	/*Non-leaf (Operation)*/
 	n = (struct node*)malloc(sizeof(struct node));
 	sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1]));
-        n->vr = circuit[n->child[0]]->vr * circuit[n->child[1]]->vr;
+        n->vr = 1;
+
+	/*Raise bit flag if there is exactly one child with value equal to 0*/
+	if (circuit[n->child[0]]->vr == 0 && circuit[n->child[1]]->vr != 0) {
+	  n->flag = true;
+	  /*Set value to product of all other non-zero child nodes*/
+	  if (!circuit[n->child[1]]->flag) {
+	    n->vr = circuit[n->child[1]]->vr;
+	  }
+	  else {
+	    n->vr = 0;
+	  }
+	}
+	else if (circuit[n->child[0]]->vr != 0 && circuit[n->child[1]]->vr == 0) {
+	  n->flag = true;
+	  /*Set value to product of all other non-zero child nodes*/
+	  if (!circuit[n->child[0]]->flag) {
+	    n->vr = circuit[n->child[0]]->vr;
+	  }
+	  else {
+	    n->vr = 0;
+	  }
+	}
+	else {
+	  n->flag = false;
+	  if (!circuit[n->child[0]]->flag) {
+	    n->vr *= circuit[n->child[0]]->vr;
+	  }
+	  else {
+	    n->vr = 0;
+	  }
+	  if (!circuit[n->child[1]]->flag) {
+	    n->vr *= circuit[n->child[1]]->vr;
+	  }
+	  else {
+	    n->vr = 0;
+	  }
+	}
+	
 	//printf("in: %c %d, val: %lf \n", n->nodeType, n->index, n->vr);
       }
-      //printf("node added %lf, %d\n", n->vr, index);
+      printf("node type: %c, vr: %lf, index: %d, flag %d\n", n->nodeType, n->vr, index, n->flag);
       //printf("node added %d\n", index);
+      n->dr = 0;
       circuit[index] = n;
       index++;
     }
@@ -110,6 +160,9 @@ int main(int argc, char** argv) {
 
   /*Print out circuit output*/
   printf("output %lf\n", circuit[index]->vr);
+
+  /*Bit-encoded backpropagation*/
+  
   
   /*Free all nodes and circuit*/
   for (int i = 0; i < index; i++) {

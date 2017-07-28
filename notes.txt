@@ -1,0 +1,2 @@
+example.ac
+out: 0.000316
