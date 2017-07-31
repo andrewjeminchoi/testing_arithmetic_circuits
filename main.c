@@ -9,10 +9,27 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-/* Reads an .ac file by argument and calculates the circuit output and 
+/* 
+ * Reads an .ac file by argument and calculates the circuit output and 
  * partial derivatives for every node.
  * The circuit is stored in an adjacency list.
- * Each non-leaf node storess its children in a separate array.
+ * Each non-leaf node storess its children in a linked list.
+ */
+
+/* 
+ * GLOBAL VARIABLES 
+ */
+struct node **circuit; //Arithmetic Circuit Structure
+
+/* 
+ * CONSTANTS
+ */
+#define MAX_NODE_NUMBER 50000 //If AC size is not specified, the program will assume max AC size of 50000
+#define MAX_LINE_NUMBER 20000
+#define NODE_SAFETY_MARGIN 20 //Adds 20 to the AC size that user specified
+
+/*
+ * STRUCTURES
  */
 
 /* Node Structure
@@ -36,15 +53,23 @@ struct node {
   /*Zero counter, if this counter is 1, set flag to true*/
   /*Currently not used (assuming binary AC structure)*/
   //int counter;
+  struct childList *childHead; 
 };
 
-struct node **circuit;
+/* List of child nodes of a non-leaf node */
+struct childList {
+  int childIndex;
+  struct childList *next;
+};
+
 
 /* 
- * Function to perform bit-encoding backpropagation 
+ * FUNCTIONS
  */
+
+/*Function to perform bit-encoded backpropagation*/
 void bit_backpropagation(int index){
-  struct node* parent;
+  struct node *parent;
   for (int i = index; i >= 0; i--) {
     parent = circuit[i];
 
@@ -83,6 +108,7 @@ void bit_backpropagation(int index){
     }
   }
 }
+
 /*
  * Function to free all nodes and print the backpropagated values in AC
  */
@@ -93,7 +119,23 @@ int free_nodes(int index) {
   }
   for (int i = 0; i <= index; i++) {
     if (circuit[i] != NULL) {
-      printf("n%d t: %c, dr: %lf vr: %lf\n", i, circuit[i]->nodeType, circuit[i]->dr, circuit[i]->vr);
+      /* Print out the values and partial derivatives for each node*/
+      printf("n%d t: %c, dr: %lf vr: %lf\n",
+	     i, circuit[i]->nodeType, circuit[i]->dr, circuit[i]->vr);
+
+      /* Deallocate the list of child nodes (if it's a non-leaf node) */
+      if (circuit[i]->childHead != NULL) {
+	struct childList *childPtr = circuit[i]->childHead;
+	struct childList *next = childPtr; 
+	while (childPtr != NULL) {
+	  next = childPtr->next;
+	  free(childPtr);
+	  childPtr = next;
+	}
+	circuit[i]->childHead = NULL;
+      }
+      
+      /* Deallocate the node */
       free(circuit[i]);
     }
   }
@@ -102,7 +144,7 @@ int free_nodes(int index) {
 
 int main(int argc, char** argv) {
   FILE *ac_file;
-  char lineToRead[5000]; 
+  char lineToRead[MAX_LINE_NUMBER]; 
   //struct node **circuit;
   struct node *n;
   int index = 0;
@@ -115,7 +157,8 @@ int main(int argc, char** argv) {
     return(EXIT_FAILURE);
   }
 
-  if (argc == 3) {
+  /*If the size of AC is specified, allocate fixed amount of memory*/
+  if (argc > 2) {
     size = atoi(argv[2]);
   }
     
@@ -128,7 +171,7 @@ int main(int argc, char** argv) {
   }
     
   /*File was successfully read*/
-  while (fgets(lineToRead, 20000, ac_file) != NULL) {
+  while (fgets(lineToRead, MAX_LINE_NUMBER, ac_file) != NULL) {
     //printf("index: %d, %s", index, lineToRead);
         
     if (*lineToRead == '(') {
@@ -136,11 +179,11 @@ int main(int argc, char** argv) {
 
       /*Allocate memory for the circuit*/
       if (size > 0) {
-	size += 20;
+	size += NODE_SAFETY_MARGIN;
 	circuit = (struct node**)malloc(sizeof(struct node*) * size);
       }
       else {
-	circuit = (struct node**)malloc(sizeof(struct node*) * 50000);
+	circuit = (struct node**)malloc(sizeof(struct node*) * MAX_NODE_NUMBER);
       }
     }
     else if (*lineToRead == 'E'){
@@ -157,6 +200,7 @@ int main(int argc, char** argv) {
 	sscanf(lineToRead, "%s %lf", &(n->nodeType), &(n->vr));
 	n->dr = 0;
 	n->flag = false;
+	n->childHead = NULL;
       }
       else if (*lineToRead == 'v') {
 	/*Leaf node (Variable)*/
@@ -164,6 +208,7 @@ int main(int argc, char** argv) {
 	sscanf(lineToRead, "%s %d %lf", &(n->nodeType), &(n->index), &(n->vr));
 	n->dr = 0;
 	n->flag = false;
+	n->childHead = NULL;
       }
       else if (*lineToRead == '+') {
 	/*Non-leaf (Operation)*/
@@ -173,23 +218,88 @@ int main(int argc, char** argv) {
 	n->flag = false;
 	n->vr = 0;
 	n->dr = 0;
+	n->childHead = NULL;
+
+	/*Read the sequence of child nodes*/
+	char *nodeList = lineToRead;
+	int childIndex;
+	int offset;
+	struct childList *children;
+	struct childList *linking;
+	nodeList += 2; /*Ignore the operator (first two characters) */
 	
-	/*Only add values if the flag is down*/
-	if (!circuit[n->child[0]]->flag) {
-	  n->vr += circuit[n->child[0]]->vr;
+	while (sscanf(nodeList, " %d%n", &childIndex, &offset) == 1) {
+	  children = (struct childList*)malloc(sizeof(struct childList));
+	  children->childIndex = childIndex;
+	 
+	  if (n->childHead == NULL) {
+	    n->childHead = children;
+	    linking = n->childHead;
+	  }
+	  else {
+	    linking->next = children;
+	    linking = linking->next;
+	  }
+	  nodeList += offset;
+	  
 	}
-	if (!circuit[n->child[1]]->flag) {
-	  n->vr += circuit[n->child[1]]->vr;
+	linking->next = NULL;
+
+	struct childList *tempPtr = n->childHead;
+
+	while (tempPtr != NULL) {
+	  int cIndex = tempPtr->childIndex;
+	  if (!circuit[cIndex]->flag) {
+	    n->vr += circuit[cIndex]->vr;
+	  }
+	  tempPtr = tempPtr->next;
 	}
+	
+	/* /\*Only add values if the flag is down*\/ */
+	/* if (!circuit[n->child[0]]->flag) { */
+	/*   n->vr += circuit[n->child[0]]->vr; */
+	/* } */
+	/* if (!circuit[n->child[1]]->flag) { */
+	/*   n->vr += circuit[n->child[1]]->vr; */
+	/* } */
+	
 	/*Incorrect output when using bit flags*/
 	//n->vr = circuit[n->child[0]]->vr + circuit[n->child[1]]->vr;
       }
       else if (*lineToRead == '*') {
 	/*Non-leaf (Operation)*/
 	n = (struct node*)malloc(sizeof(struct node));
-	sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1]));
-        n->vr = 1;
+
+	n->vr = 1;
 	n->dr = 0;
+	n->childHead = NULL;
+	
+	/*Read the sequence of child nodes*/
+	char *nodeList = lineToRead;
+	int childIndex;
+	int offset;
+	struct childList *children;
+	struct childList *linking;
+	nodeList += 2; /*Ignore the operator (first two characters) */
+	
+	while (sscanf(nodeList, " %d%n", &childIndex, &offset) == 1) {
+	  children = (struct childList*)malloc(sizeof(struct childList));
+	  children->childIndex = childIndex;
+	 
+	  if (n->childHead == NULL) {
+	    n->childHead = children;
+	    linking = n->childHead;
+	  }
+	  else {
+	    linking->next = children;
+	    linking = linking->next;
+	  }
+	  nodeList += offset;
+	  
+	}
+	linking->next = NULL;	
+	sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1]));
+
 
 	/*Raise bit flag if there is exactly one child with value equal to 0*/
 	if (circuit[n->child[0]]->vr == 0 && circuit[n->child[1]]->vr != 0) {
