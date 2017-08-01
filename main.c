@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
+#include <math.h>
 
 /* 
  * Reads an .ac file by argument and calculates the circuit output and 
@@ -24,7 +26,7 @@ struct node **circuit; //Arithmetic Circuit Structure
 /* 
  * CONSTANTS
  */
-#define MAX_NODE_NUMBER 50000 //If AC size is not specified, the program will assume max AC size of 50000
+#define MAX_NODE_NUMBER 50000 //Program assumes max AC size of 50000 (if not specified)
 #define MAX_LINE_NUMBER 20000
 #define NODE_SAFETY_MARGIN 20 //Adds 20 to the AC size that user specified
 
@@ -46,7 +48,6 @@ struct node {
   double dr; 
   /*Children nodes*/
   /*Currently assumes a binary AC (only two children per node)*/
-  //struct node **child;
   int child[2];
   /*Bit flag, true means there is exactly one child that is zero*/
   bool flag;
@@ -67,44 +68,88 @@ struct childList {
  * FUNCTIONS
  */
 
+struct node* allocate_constant_node(char* line, struct node* n) {
+  n = (struct node*)malloc(sizeof(struct node));
+  sscanf(line, "%s %lf", &(n->nodeType), &(n->vr));
+  n->dr = 0;
+  n->flag = false;
+  n->childHead = NULL;
+  return n;
+}
+
+struct node* allocate_variable_node(char* line, struct node* n) {
+  n = (struct node*)malloc(sizeof(struct node));
+  sscanf(line, "%s %d %lf", &(n->nodeType), &(n->index), &(n->vr));
+  n->dr = 0;
+  n->flag = false;
+  n->childHead = NULL;
+  return n;
+}
+
 /*Function to perform bit-encoded backpropagation*/
 void bit_backpropagation(int index){
   struct node *parent;
+  struct childList *tempPtr;
   for (int i = index; i >= 0; i--) {
     parent = circuit[i];
 
     /*Assign dr values depending on parent node*/
     if (parent->nodeType == '+') {
-      circuit[parent->child[0]]->dr = parent->dr;
-      circuit[parent->child[1]]->dr = parent->dr;
+      tempPtr = parent->childHead;
+      while (tempPtr != NULL) {
+	int cIndex = tempPtr->childIndex;
+	circuit[cIndex]->dr = parent->dr;
+	tempPtr = tempPtr->next;
+      }
     }
     else if (parent->nodeType == '*') {
-      /*if bit flag is down, and parent is non-zero, dr(c) = dr(p)*vr(p)/vr(c)*/
-      if (parent->dr == 0) {
-	/*Set all child nodes dr to zero*/
-	circuit[parent->child[0]]->dr = 0;
-	circuit[parent->child[1]]->dr = 0;
-      }
-      else if (parent->flag) {
-	/*Check value of all child nodes*/
-	/*if flag is up and child is zero, then dr(c) = dr(p) * vr(p)*/
-	if (circuit[parent->child[0]]->vr == 0) {
-	  circuit[parent->child[0]]->dr = parent->dr * parent->vr;
-	  /*Set all other children dr to zero*/
-	  circuit[parent->child[1]]->dr = 0;
+      if (parent->vr != 0) {
+	if (!parent->flag) {
+	  tempPtr = parent->childHead;
+	  while (tempPtr != NULL) {
+	    int cIndex = tempPtr->childIndex;
+	    circuit[cIndex]->dr = (parent->dr)*(parent->vr)/(circuit[cIndex]->vr);
+	    tempPtr = tempPtr->next;
+	  }
 	}
 	else {
-	  circuit[parent->child[1]]->dr = 0;
-	  circuit[parent->child[0]]->dr = parent->dr *
-	    (parent->vr / circuit[parent->child[0]]->vr);
+	  tempPtr = parent->childHead;
+	  while (tempPtr != NULL) {
+	    int cIndex = tempPtr->childIndex;
+	    if (circuit[cIndex] == 0) {
+	      circuit[cIndex]->dr = (parent->dr) * (parent->vr);
+	    }
+	    tempPtr = tempPtr->next;
+	  }
 	}
       }
-      else {
-	circuit[parent->child[1]]->dr = parent->dr *
-	  (parent->vr / circuit[parent->child[1]]->vr);
-	circuit[parent->child[0]]->dr = parent->dr *
-	  (parent->vr / circuit[parent->child[0]]->vr);
-      }
+
+
+      
+      /* if (parent->vr == 0 || parent->dr == 0) { */
+      /* 	/\*At least two child nodes are zero, so dr(c) = 0*\/ */
+      /* } */
+      /* /\*if bit flag is down, and parent is non-zero, dr(c) = dr(p)*vr(p)/vr(c)*\/ */
+      /* else if (parent->flag) { */
+      /* 	/\*Check value of all child nodes*\/ */
+      /* 	/\*if flag is up and child is zero, then dr(c) = dr(p) * vr(p)*\/ */
+      /* 	if (circuit[parent->child[0]]->vr == 0) { */
+      /* 	  circuit[parent->child[0]]->dr = parent->dr * parent->vr; */
+      /* 	  /\*Set all other children dr to zero*\/ */
+      /* 	  circuit[parent->child[1]]->dr = 0; */
+      /* 	} */
+      /* 	else { */
+      /* 	  circuit[parent->child[1]]->dr = 0; */
+      /* 	  circuit[parent->child[0]]->dr = parent->dr * */
+      /* 	    (parent->vr / circuit[parent->child[0]]->vr); */
+      /* 	} */
+      /* } */
+      /* else { */
+      /* 	circuit[parent->child[1]]->dr = parent->dr * */
+      /* 	  (parent->vr / circuit[parent->child[1]]->vr); */
+      /* 	circuit[parent->child[0]]->dr = parent->dr * */
+      /* 	  (parent->vr / circuit[parent->child[0]]->vr); */
+      /* } */
     }
   }
 }
@@ -120,8 +165,8 @@ int free_nodes(int index) {
   for (int i = 0; i <= index; i++) {
     if (circuit[i] != NULL) {
       /* Print out the values and partial derivatives for each node*/
-      printf("n%d t: %c, dr: %lf vr: %lf\n",
-	     i, circuit[i]->nodeType, circuit[i]->dr, circuit[i]->vr);
+      //printf("n%d t: %c, dr: %lf vr: %lf, flag: %d\n",
+      //   i, circuit[i]->nodeType, circuit[i]->dr, circuit[i]->vr, circuit[i]->flag);
 
       /* Deallocate the list of child nodes (if it's a non-leaf node) */
       if (circuit[i]->childHead != NULL) {
@@ -146,7 +191,7 @@ int main(int argc, char** argv) {
   FILE *ac_file;
   char lineToRead[MAX_LINE_NUMBER]; 
   //struct node **circuit;
-  struct node *n;
+  struct node *n; //temporary storage for nodes
   int index = 0;
   int size = 0;
   
@@ -196,20 +241,14 @@ int main(int argc, char** argv) {
       if (*lineToRead == 'n') {
 	/*Leaf node (Constant)*/
 	/*Insert node into circuit*/
-	n = (struct node*)malloc(sizeof(struct node));
-	sscanf(lineToRead, "%s %lf", &(n->nodeType), &(n->vr));
-	n->dr = 0;
-	n->flag = false;
-	n->childHead = NULL;
+	n = allocate_constant_node(lineToRead, n);
       }
+      
       else if (*lineToRead == 'v') {
 	/*Leaf node (Variable)*/
-	n = (struct node*)malloc(sizeof(struct node));
-	sscanf(lineToRead, "%s %d %lf", &(n->nodeType), &(n->index), &(n->vr));
-	n->dr = 0;
-	n->flag = false;
-	n->childHead = NULL;
+	n = allocate_variable_node(lineToRead, n);
       }
+      
       else if (*lineToRead == '+') {
 	/*Non-leaf (Operation)*/
 	n = (struct node*)malloc(sizeof(struct node));
@@ -245,6 +284,7 @@ int main(int argc, char** argv) {
 	}
 	linking->next = NULL;
 
+	/* Add the child node value only if the flag is down */
 	struct childList *tempPtr = n->childHead;
 
 	while (tempPtr != NULL) {
@@ -254,30 +294,25 @@ int main(int argc, char** argv) {
 	  }
 	  tempPtr = tempPtr->next;
 	}
-	
-	/* /\*Only add values if the flag is down*\/ */
-	/* if (!circuit[n->child[0]]->flag) { */
-	/*   n->vr += circuit[n->child[0]]->vr; */
-	/* } */
-	/* if (!circuit[n->child[1]]->flag) { */
-	/*   n->vr += circuit[n->child[1]]->vr; */
-	/* } */
-	
+
 	/*Incorrect output when using bit flags*/
 	//n->vr = circuit[n->child[0]]->vr + circuit[n->child[1]]->vr;
       }
+      
       else if (*lineToRead == '*') {
 	/*Non-leaf (Operation)*/
 	n = (struct node*)malloc(sizeof(struct node));
-
+	n->nodeType = '*';
 	n->vr = 1;
 	n->dr = 0;
+	n->flag = false;
 	n->childHead = NULL;
 	
 	/*Read the sequence of child nodes*/
 	char *nodeList = lineToRead;
 	int childIndex;
 	int offset;
+	int zeroCount = 0;
 	struct childList *children;
 	struct childList *linking;
 	nodeList += 2; /*Ignore the operator (first two characters) */
@@ -285,7 +320,8 @@ int main(int argc, char** argv) {
 	while (sscanf(nodeList, " %d%n", &childIndex, &offset) == 1) {
 	  children = (struct childList*)malloc(sizeof(struct childList));
 	  children->childIndex = childIndex;
-	 
+
+	  /*Insert child node*/
 	  if (n->childHead == NULL) {
 	    n->childHead = children;
 	    linking = n->childHead;
@@ -295,48 +331,84 @@ int main(int argc, char** argv) {
 	    linking = linking->next;
 	  }
 	  nodeList += offset;
-	  
-	}
-	linking->next = NULL;	
-	sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1]));
 
-
-	/*Raise bit flag if there is exactly one child with value equal to 0*/
-	if (circuit[n->child[0]]->vr == 0 && circuit[n->child[1]]->vr != 0) {
-	  n->flag = true;
-	  /*Set value to product of all other non-zero child nodes*/
-	  if (!circuit[n->child[1]]->flag) {
-	    n->vr = circuit[n->child[1]]->vr;
-	  }
-	  else {
-	    n->vr = 0;
+	  /*Check if child node is zero*/
+	  if (circuit[childIndex]->vr == 0) {
+	    zeroCount++;
 	  }
 	}
-	else if (circuit[n->child[0]]->vr != 0 && circuit[n->child[1]]->vr == 0) {
+	linking->next = NULL;
+	if (zeroCount == 1) {
 	  n->flag = true;
-	  /*Set value to product of all other non-zero child nodes*/
-	  if (!circuit[n->child[0]]->flag) {
-	    n->vr = circuit[n->child[0]]->vr;
-	  }
-	  else {
-	    n->vr = 0;
+
+	  /* Multiply child if flag is down and is not zero */
+	  struct childList *tempPtr = n->childHead;
+
+	  while (tempPtr != NULL) {
+	    int cIndex = tempPtr->childIndex;
+	    if (circuit[cIndex]->flag) {
+	      n->vr = 0;
+	      break;
+	    }
+	    else if (!circuit[cIndex]->flag && circuit[cIndex]->vr != 0) {
+	      n->vr *= circuit[cIndex]->vr;
+	    }
+	    tempPtr = tempPtr->next;
 	  }
 	}
 	else {
-	  n->flag = false;
-	  if (!circuit[n->child[0]]->flag) {
-	    n->vr *= circuit[n->child[0]]->vr;
-	  }
-	  else {
-	    n->vr = 0;
-	  }
-	  if (!circuit[n->child[1]]->flag) {
-	    n->vr *= circuit[n->child[1]]->vr;
-	  }
-	  else {
-	    n->vr = 0;
+	  struct childList *tempPtr = n->childHead;
+
+	  while (tempPtr != NULL) {
+	    int cIndex = tempPtr->childIndex;
+	    if (circuit[cIndex]->flag) {
+	      n->vr = 0;
+	      break;
+	    }
+	    else {
+	      n->vr *= circuit[cIndex]->vr;
+	    }
+	    tempPtr = tempPtr->next;
 	  }
 	}
+	/* sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1])); */
+	/* /\*Raise bit flag if there is exactly one child with value equal to 0*\/ */
+	/* if (circuit[n->child[0]]->vr == 0 && circuit[n->child[1]]->vr != 0) { */
+	/*   n->flag = true; */
+	/*   /\*Set value to product of all other non-zero child nodes*\/ */
+	/*   if (!circuit[n->child[1]]->flag) { */
+	/*     n->vr = circuit[n->child[1]]->vr; */
+	/*   } */
+	/*   else { */
+	/*     n->vr = 0; */
+	/*   } */
+	/* } */
+	/* else if (circuit[n->child[0]]->vr != 0 && circuit[n->child[1]]->vr == 0) { */
+	/*   n->flag = true; */
+	/*   /\*Set value to product of all other non-zero child nodes*\/ */
+	/*   if (!circuit[n->child[0]]->flag) { */
+	/*     n->vr = circuit[n->child[0]]->vr; */
+	/*   } */
+	/*   else { */
+	/*     n->vr = 0; */
+	/*   } */
+	/* } */
+	/* else { */
+	/*   n->flag = false; */
+	/*   if (!circuit[n->child[0]]->flag) { */
+	/*     n->vr *= circuit[n->child[0]]->vr; */
+	/*   } */
+	/*   else { */
+	/*     n->vr = 0; */
+	/*   } */
+	/*   if (!circuit[n->child[1]]->flag) { */
+	/*     n->vr *= circuit[n->child[1]]->vr; */
+	/*   } */
+	/*   else { */
+	/*     n->vr = 0; */
+	/*   } */
+	/* } */
+	
       }
       //printf("node type: %c, vr: %lf, index: %d, flag %d\n", n->nodeType, n->vr, index, n->flag);
       circuit[index] = n;
@@ -345,7 +417,13 @@ int main(int argc, char** argv) {
   }
 
   /*Print out circuit output*/
-  printf("output %lf for %d nodes\n\n", circuit[index]->vr, index);
+  printf("output %lf for %d nodes\n", circuit[index]->vr, index);
+
+  printf("log: %lf\n", log10(circuit[index]->vr));
+  
+  if (circuit[index]->vr == 0) {
+    assert(0);
+  }
 
   /*Bit-encoded backpropagation*/
   printf("\t... starting backpropagation ...\n");
@@ -359,6 +437,8 @@ int main(int argc, char** argv) {
   if (ac_file != NULL) {
     fclose(ac_file);
   }
+
+  printf("\t... done ... \n");
   
   return (EXIT_SUCCESS);
 }
