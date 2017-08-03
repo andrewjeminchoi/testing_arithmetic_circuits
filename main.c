@@ -45,15 +45,10 @@ struct node {
   /*Value of the node*/
   double vr; 
   /*Derivative of the node*/
-  double dr; 
-  /*Children nodes*/
-  /*Currently assumes a binary AC (only two children per node)*/
-  int child[2];
+  double dr;
   /*Bit flag, true means there is exactly one child that is zero*/
   bool flag;
-  /*Zero counter, if this counter is 1, set flag to true*/
-  /*Currently not used (assuming binary AC structure)*/
-  //int counter;
+  /*Linked list of child nodes*/
   struct childList *childHead; 
 };
 
@@ -226,7 +221,7 @@ int main(int argc, char** argv) {
 	/*Non-leaf (Operation)*/
 	n = (struct node*)malloc(sizeof(struct node));
 	/*"n->child" stores the index of the children nodes in the circuit*/
-	sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1]));
+	sscanf(lineToRead, "%s", &(n->nodeType));
 	n->flag = false;
 	n->vr = 0;
 	n->dr = 0;
