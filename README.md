@@ -1,6 +1,6 @@
 # Arithmetic Circuits in C
 
-## Running the program for movie.ac on Linux
+#### Running the program for movie.ac on Linux
 
 gcc -o ac main.c -lm
 
