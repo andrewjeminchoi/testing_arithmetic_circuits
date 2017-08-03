@@ -1,0 +1,27 @@
+	... reading file ...
+	... done reading file ... 
+output 0.140000 for 20 nodes
+log: -0.853872
+	... starting backpropagation ...
+n0 t: v, dr: 0.140000 vr: 1.000000, flag: 0
+n1 t: n, dr: 0.200000 vr: 0.700000, flag: 0
+n2 t: n, dr: 0.000000 vr: 0.100000, flag: 0
+n3 t: *, dr: 0.200000 vr: 0.700000, flag: 0
+n4 t: *, dr: 0.000000 vr: 0.100000, flag: 0
+n5 t: v, dr: 0.060000 vr: 0.000000, flag: 0
+n6 t: n, dr: 0.000000 vr: 0.300000, flag: 0
+n7 t: n, dr: 0.000000 vr: 0.900000, flag: 0
+n8 t: *, dr: 0.200000 vr: 0.300000, flag: 1
+n9 t: *, dr: 0.000000 vr: 0.900000, flag: 1
+n10 t: +, dr: 0.200000 vr: 0.700000, flag: 0
+n11 t: +, dr: 0.000000 vr: 0.100000, flag: 0
+n12 t: v, dr: 0.140000 vr: 1.000000, flag: 0
+n13 t: n, dr: 0.700000 vr: 0.200000, flag: 0
+n14 t: *, dr: 0.700000 vr: 0.200000, flag: 0
+n15 t: *, dr: 1.000000 vr: 0.140000, flag: 0
+n16 t: v, dr: 0.000000 vr: 0.000000, flag: 0
+n17 t: n, dr: 0.000000 vr: 0.800000, flag: 0
+n18 t: *, dr: 0.000000 vr: 0.800000, flag: 1
+n19 t: *, dr: 1.000000 vr: 0.000000, flag: 0
+n20 t: +, dr: 1.000000 vr: 0.140000, flag: 0
+	... done ... 

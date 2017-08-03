@@ -49,11 +49,15 @@ struct node {
   /*Bit flag, true means there is exactly one child that is zero*/
   bool flag;
   /*Linked list of child nodes*/
-  struct childList *childHead; 
+  struct childList *childHead;
+  /*Product registers*/
+  double *prL;
+  double *prR;
 };
 
 /* List of child nodes of a non-leaf node */
 struct childList {
+  int position; //Child node position, relative to tree. Left-most is position 0. 
   int childIndex;
   struct childList *next;
 };
@@ -93,7 +97,7 @@ void bit_backpropagation(int index){
       tempPtr = parent->childHead;
       while (tempPtr != NULL) {
 	int cIndex = tempPtr->childIndex;
-	circuit[cIndex]->dr = parent->dr;
+	circuit[cIndex]->dr += parent->dr;
 	tempPtr = tempPtr->next;
       }
     }
@@ -103,16 +107,18 @@ void bit_backpropagation(int index){
 	  tempPtr = parent->childHead;
 	  while (tempPtr != NULL) {
 	    int cIndex = tempPtr->childIndex;
-	    circuit[cIndex]->dr = (parent->dr)*(parent->vr)/(circuit[cIndex]->vr);
+	    circuit[cIndex]->dr += (parent->dr)*(parent->vr)/(circuit[cIndex]->vr);
 	    tempPtr = tempPtr->next;
 	  }
 	}
 	else {
+	  //printf("parent %d flag 1\n", i);
 	  tempPtr = parent->childHead;
 	  while (tempPtr != NULL) {
 	    int cIndex = tempPtr->childIndex;
-	    if (circuit[cIndex] == 0) {
-	      circuit[cIndex]->dr = (parent->dr) * (parent->vr);
+	    //printf("child %d \n", cIndex);
+	    if (circuit[cIndex]->vr == 0) {
+	      circuit[cIndex]->dr += (parent->dr) * (parent->vr);
 	    }
 	    tempPtr = tempPtr->next;
 	  }
@@ -133,8 +139,8 @@ int free_nodes(int index) {
   for (int i = 0; i <= index; i++) {
     if (circuit[i] != NULL) {
       /* Print out the values and partial derivatives for each node*/
-      //printf("n%d t: %c, dr: %lf vr: %lf, flag: %d\n",
-      //   i, circuit[i]->nodeType, circuit[i]->dr, circuit[i]->vr, circuit[i]->flag);
+      printf("n%d t: %c, dr: log(%lf) vr: %lf, flag: %d\n",
+	     i, circuit[i]->nodeType, log10(circuit[i]->dr), circuit[i]->vr, circuit[i]->flag);
 
       /* Deallocate the list of child nodes (if it's a non-leaf node) */
       if (circuit[i]->childHead != NULL) {

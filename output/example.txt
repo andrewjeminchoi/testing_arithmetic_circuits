@@ -1,0 +1,43 @@
+	... reading file ...
+	... done reading file ... 
+output 0.000316 for 36 nodes
+log: -3.500805
+	... starting backpropagation ...
+n0 t: v, dr: 0.000474 vr: 0.000000, flag: 0
+n1 t: n, dr: 0.000000 vr: 0.981081, flag: 0
+n2 t: n, dr: 0.000000 vr: 0.999500, flag: 0
+n3 t: v, dr: 0.000000 vr: 0.000000, flag: 0
+n4 t: *, dr: 0.000000 vr: 0.999500, flag: 1
+n5 t: n, dr: 0.000000 vr: 4.481689, flag: 0
+n6 t: *, dr: 0.000000 vr: 0.000000, flag: 0
+n7 t: *, dr: 0.000000 vr: 0.981081, flag: 1
+n8 t: n, dr: 0.000000 vr: 0.948190, flag: 0
+n9 t: n, dr: 0.631285 vr: 0.000500, flag: 0
+n10 t: v, dr: 0.000316 vr: 1.000000, flag: 0
+n11 t: *, dr: 0.631285 vr: 0.000500, flag: 0
+n12 t: *, dr: 0.000000 vr: 0.000474, flag: 0
+n13 t: +, dr: 0.000000 vr: 0.000474, flag: 0
+n14 t: *, dr: 0.000000 vr: 0.000474, flag: 1
+n15 t: v, dr: 0.000316 vr: 1.000000, flag: 0
+n16 t: n, dr: 0.000000 vr: 0.018873, flag: 0
+n17 t: *, dr: 1.000000 vr: 0.000000, flag: 0
+n18 t: n, dr: 0.006091 vr: 0.051819, flag: 0
+n19 t: *, dr: 0.000000 vr: 0.000026, flag: 0
+n20 t: +, dr: 0.000000 vr: 0.000026, flag: 0
+n21 t: *, dr: 0.000000 vr: 0.000026, flag: 0
+n22 t: +, dr: 0.000000 vr: 0.000026, flag: 0
+n23 t: v, dr: 0.000026 vr: 0.000000, flag: 0
+n24 t: *, dr: 1.000000 vr: 0.000026, flag: 1
+n25 t: *, dr: 0.000000 vr: 0.000000, flag: 0
+n26 t: +, dr: 0.000000 vr: 0.000474, flag: 0
+n27 t: *, dr: 1.000000 vr: 0.000474, flag: 1
+n28 t: n, dr: 0.000026 vr: 12.182494, flag: 0
+n29 t: *, dr: 0.051819 vr: 0.006091, flag: 0
+n30 t: *, dr: 1.000000 vr: 0.000316, flag: 0
+n31 t: +, dr: 1.000000 vr: 0.000316, flag: 0
+n32 t: *, dr: 1.000000 vr: 0.000316, flag: 0
+n33 t: +, dr: 1.000000 vr: 0.000316, flag: 0
+n34 t: v, dr: 0.000316 vr: 1.000000, flag: 0
+n35 t: *, dr: 1.000000 vr: 0.000316, flag: 0
+n36 t: +, dr: 1.000000 vr: 0.000316, flag: 0
+	... done ... 
