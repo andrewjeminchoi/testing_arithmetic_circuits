@@ -123,33 +123,6 @@ void bit_backpropagation(int index){
 	  }
 	}
       }
-
-
-      
-      /* if (parent->vr == 0 || parent->dr == 0) { */
-      /* 	/\*At least two child nodes are zero, so dr(c) = 0*\/ */
-      /* } */
-      /* /\*if bit flag is down, and parent is non-zero, dr(c) = dr(p)*vr(p)/vr(c)*\/ */
-      /* else if (parent->flag) { */
-      /* 	/\*Check value of all child nodes*\/ */
-      /* 	/\*if flag is up and child is zero, then dr(c) = dr(p) * vr(p)*\/ */
-      /* 	if (circuit[parent->child[0]]->vr == 0) { */
-      /* 	  circuit[parent->child[0]]->dr = parent->dr * parent->vr; */
-      /* 	  /\*Set all other children dr to zero*\/ */
-      /* 	  circuit[parent->child[1]]->dr = 0; */
-      /* 	} */
-      /* 	else { */
-      /* 	  circuit[parent->child[1]]->dr = 0; */
-      /* 	  circuit[parent->child[0]]->dr = parent->dr * */
-      /* 	    (parent->vr / circuit[parent->child[0]]->vr); */
-      /* 	} */
-      /* } */
-      /* else { */
-      /* 	circuit[parent->child[1]]->dr = parent->dr * */
-      /* 	  (parent->vr / circuit[parent->child[1]]->vr); */
-      /* 	circuit[parent->child[0]]->dr = parent->dr * */
-      /* 	  (parent->vr / circuit[parent->child[0]]->vr); */
-      /* } */
     }
   }
 }
@@ -371,44 +344,6 @@ int main(int argc, char** argv) {
 	    tempPtr = tempPtr->next;
 	  }
 	}
-	/* sscanf(lineToRead, "%s %d %d", &(n->nodeType), &(n->child[0]), &(n->child[1])); */
-	/* /\*Raise bit flag if there is exactly one child with value equal to 0*\/ */
-	/* if (circuit[n->child[0]]->vr == 0 && circuit[n->child[1]]->vr != 0) { */
-	/*   n->flag = true; */
-	/*   /\*Set value to product of all other non-zero child nodes*\/ */
-	/*   if (!circuit[n->child[1]]->flag) { */
-	/*     n->vr = circuit[n->child[1]]->vr; */
-	/*   } */
-	/*   else { */
-	/*     n->vr = 0; */
-	/*   } */
-	/* } */
-	/* else if (circuit[n->child[0]]->vr != 0 && circuit[n->child[1]]->vr == 0) { */
-	/*   n->flag = true; */
-	/*   /\*Set value to product of all other non-zero child nodes*\/ */
-	/*   if (!circuit[n->child[0]]->flag) { */
-	/*     n->vr = circuit[n->child[0]]->vr; */
-	/*   } */
-	/*   else { */
-	/*     n->vr = 0; */
-	/*   } */
-	/* } */
-	/* else { */
-	/*   n->flag = false; */
-	/*   if (!circuit[n->child[0]]->flag) { */
-	/*     n->vr *= circuit[n->child[0]]->vr; */
-	/*   } */
-	/*   else { */
-	/*     n->vr = 0; */
-	/*   } */
-	/*   if (!circuit[n->child[1]]->flag) { */
-	/*     n->vr *= circuit[n->child[1]]->vr; */
-	/*   } */
-	/*   else { */
-	/*     n->vr = 0; */
-	/*   } */
-	/* } */
-	
       }
       //printf("node type: %c, vr: %lf, index: %d, flag %d\n", n->nodeType, n->vr, index, n->flag);
       circuit[index] = n;
