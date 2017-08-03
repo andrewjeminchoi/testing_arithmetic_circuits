@@ -1,5 +1,8 @@
 # Arithmetic Circuits in C
 
-To compile: gcc -o ac main.c -lm
+## Running the program for movie.ac on Linux
 
-To run on linux: ./ac (*name of input*) (*size of circuit*)
+gcc -o ac main.c -lm
+./ac movie.ac
+
+The program also accepts a third argument, which specifies the size of the circuit
