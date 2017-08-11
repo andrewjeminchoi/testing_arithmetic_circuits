@@ -192,35 +192,10 @@ void cache_backpropagation(int index) {
       while (tempPtr != NULL) {
 	int cIndex = tempPtr->childIndex;
 	circuit[cIndex]->dr += parent->dr * parent->prR[(n-pos)] * parent->prL[(pos-1)];
-	printf("index %d r %d l %d\n", cIndex, (n-pos), pos-1);
+	//printf("index %d r %d l %d\n", cIndex, (n-pos), pos-1);
 	tempPtr = tempPtr->next;
 	pos++;
       }
-      
-      /* if (parent->vr != 0) { */
-      /* 	if (!parent->flag) { */
-      /* 	  tempPtr = parent->childHead; */
-      /* 	  int pos = 1; //position of child */
-      /* 	  /\*Product: pr(i) = prR(n-i) * prL(i-1)*\/ */
-      /* 	  while (tempPtr != NULL) { */
-      /* 	    int cIndex = tempPtr->childIndex; */
-      /* 	    circuit[cIndex]->dr += (parent->dr)*(parent->vr)/(circuit[cIndex]->vr); */
-      /* 	    tempPtr = tempPtr->next; */
-      /* 	  } */
-      /* 	} */
-      /* 	else { */
-      /* 	  //printf("parent %d flag 1\n", i); */
-      /* 	  tempPtr = parent->childHead; */
-      /* 	  while (tempPtr != NULL) { */
-      /* 	    int cIndex = tempPtr->childIndex; */
-      /* 	    //printf("child %d \n", cIndex); */
-      /* 	    if (circuit[cIndex]->vr == 0) { */
-      /* 	      circuit[cIndex]->dr += (parent->dr) * (parent->vr); */
-      /* 	    } */
-      /* 	    tempPtr = tempPtr->next; */
-      /* 	  } */
-      /* 	} */
-      /* } */
     }
   }
 }
@@ -492,10 +467,12 @@ int main(int argc, char** argv) {
     assert(0);
   }
 
-  /*Bit-encoded backpropagation*/
   printf("\t... starting backpropagation ...\n");
-  
+
+  /*Bit-encoded backpropagation*/
   //bit_backpropagation(index);
+  
+  /*Product cache backpropagation*/
   cache_backpropagation(index);
   
   /*Free all nodes and circuit*/
