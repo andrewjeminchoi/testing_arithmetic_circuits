@@ -58,7 +58,7 @@ struct node {
 
 /* List of child nodes of a non-leaf node */
 struct childList {
-  //int numChildren; //number of children nodes of the parent node
+  int numChildren; //number of children nodes of the parent node
   //int position; //Child node position, relative to other children. Left-most is position 1. 
   int childIndex; //circuit index of child node
   struct childList *next; 
@@ -168,50 +168,62 @@ void bit_backpropagation(int index){
   }
 }
 
-/* void cache_backpropagation(int index) { */
-/*   struct node *parent; */
-/*   struct childList *tempPtr; */
-/*   for (int i = index; i >= 0; i--) { */
-/*     parent = circuit[i]; */
+void cache_backpropagation(int index) {
+  struct node *parent;
+  struct childList *tempPtr;
+  for (int i = index; i >= 0; i--) {
+    parent = circuit[i];
 
-/*     /\*Assign dr values depending on parent node*\/ */
-/*     if (parent->nodeType == '+') { */
-/*       tempPtr = parent->childHead; */
-/*       while (tempPtr != NULL) { */
-/* 	int cIndex = tempPtr->childIndex; */
-/* 	circuit[cIndex]->dr += parent->dr; */
-/* 	tempPtr = tempPtr->next; */
-/*       } */
-/*     } */
-/*     /\*Assign dr based on child position in cache*\/ */
-/*     else if (parent->nodeType == '*') { */
-/*       if (parent->vr != 0) { */
-/* 	if (!parent->flag) { */
-/* 	  tempPtr = parent->childHead; */
-/* 	  int pos = 1; //position of child */
-/* 	  /\*Product: pr(i) = prR(n-i) * prL(i-1)*\/ */
-/* 	  while (tempPtr != NULL) { */
-/* 	    int cIndex = tempPtr->childIndex; */
-/* 	    circuit[cIndex]->dr += (parent->dr)*(parent->vr)/(circuit[cIndex]->vr); */
-/* 	    tempPtr = tempPtr->next; */
-/* 	  } */
-/* 	} */
-/* 	else { */
-/* 	  //printf("parent %d flag 1\n", i); */
-/* 	  tempPtr = parent->childHead; */
-/* 	  while (tempPtr != NULL) { */
-/* 	    int cIndex = tempPtr->childIndex; */
-/* 	    //printf("child %d \n", cIndex); */
-/* 	    if (circuit[cIndex]->vr == 0) { */
-/* 	      circuit[cIndex]->dr += (parent->dr) * (parent->vr); */
-/* 	    } */
-/* 	    tempPtr = tempPtr->next; */
-/* 	  } */
-/* 	} */
-/*       } */
-/*     } */
-/*   } */
-/* } */
+    /*Assign dr values depending on parent node*/
+    if (parent->nodeType == '+') {
+      tempPtr = parent->childHead;
+      while (tempPtr != NULL) {
+	int cIndex = tempPtr->childIndex;
+	circuit[cIndex]->dr += parent->dr;
+	tempPtr = tempPtr->next;
+      }
+    }
+    /*Assign dr based on child position in cache*/
+    else if (parent->nodeType == '*') {
+      tempPtr = parent->childHead;
+      int pos = 1; //position of child
+      int n = tempPtr->numChildren;
+      /*Product: pr(pos) = prR(n-pos) * prL(pos-1)*/
+      while (tempPtr != NULL) {
+	int cIndex = tempPtr->childIndex;
+	circuit[cIndex]->dr += parent->dr * parent->prR[(n-pos)] * parent->prL[(pos-1)];
+	printf("index %d r %d l %d\n", cIndex, (n-pos), pos-1);
+	tempPtr = tempPtr->next;
+	pos++;
+      }
+      
+      /* if (parent->vr != 0) { */
+      /* 	if (!parent->flag) { */
+      /* 	  tempPtr = parent->childHead; */
+      /* 	  int pos = 1; //position of child */
+      /* 	  /\*Product: pr(i) = prR(n-i) * prL(i-1)*\/ */
+      /* 	  while (tempPtr != NULL) { */
+      /* 	    int cIndex = tempPtr->childIndex; */
+      /* 	    circuit[cIndex]->dr += (parent->dr)*(parent->vr)/(circuit[cIndex]->vr); */
+      /* 	    tempPtr = tempPtr->next; */
+      /* 	  } */
+      /* 	} */
+      /* 	else { */
+      /* 	  //printf("parent %d flag 1\n", i); */
+      /* 	  tempPtr = parent->childHead; */
+      /* 	  while (tempPtr != NULL) { */
+      /* 	    int cIndex = tempPtr->childIndex; */
+      /* 	    //printf("child %d \n", cIndex); */
+      /* 	    if (circuit[cIndex]->vr == 0) { */
+      /* 	      circuit[cIndex]->dr += (parent->dr) * (parent->vr); */
+      /* 	    } */
+      /* 	    tempPtr = tempPtr->next; */
+      /* 	  } */
+      /* 	} */
+      /* } */
+    }
+  }
+}
 
 /*
  * Function to free all nodes and print the backpropagated values in AC
@@ -408,7 +420,7 @@ int main(int argc, char** argv) {
 	if (zeroCount == 1) {
 	  n->flag = true;
 	}
-
+	
 	//bit_forwardpropagation(n);
 
 	//Initialize Product registers
@@ -416,6 +428,7 @@ int main(int argc, char** argv) {
 	
 	double childvr[(childCount + 1)]; //start index from 1
 	int j = 0;
+	n->childHead->numChildren = childCount;
 	n->prL = (double*)calloc((childCount + 1), sizeof(double));
 	n->prR = (double*)calloc((childCount + 1), sizeof(double));
 	//printf("prL %li prR %li\n", sizeof(double), sizeof(n->prR));
@@ -483,6 +496,7 @@ int main(int argc, char** argv) {
   printf("\t... starting backpropagation ...\n");
   
   //bit_backpropagation(index);
+  cache_backpropagation(index);
   
   /*Free all nodes and circuit*/
   free_nodes(index);
