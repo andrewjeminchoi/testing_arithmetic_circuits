@@ -240,11 +240,11 @@ void cache_backpropagation(int index) {
     else if (parent->nodeType == '*') {
       tempPtr = parent->childHead;
       int pos = 1; //position of child
-      int n = tempPtr->numChildren;
-      /*Product: pr(pos) = prR(n-pos) * prL(pos-1)*/
+      int w = tempPtr->numChildren;
+      /*Product: pr(pos) = prR(w-pos) * prL(pos-1)*/
       while (tempPtr != NULL) {
 	int cIndex = tempPtr->childIndex;
-	circuit[cIndex]->dr += parent->dr * parent->prR[(n-pos)] * parent->prL[(pos-1)];
+	circuit[cIndex]->dr += parent->dr * parent->prR[(w-pos)] * parent->prL[(pos-1)];
 	//printf("index %d r %d l %d\n", cIndex, (n-pos), pos-1);
 	tempPtr = tempPtr->next;
 	pos++;
