@@ -95,6 +95,7 @@ void bit_forwardpropagation(struct node* n) {
   if (n->flag) {
     /* Multiply child if flag is down and is not zero */
     struct childList *tempPtr = n->childHead;
+    n->childHead->numChildren = -1; //trivial, set it to -1 for convenience
 
     while (tempPtr != NULL) {
       int cIndex = tempPtr->childIndex;
@@ -123,6 +124,58 @@ void bit_forwardpropagation(struct node* n) {
       tempPtr = tempPtr->next;
     }
   }
+}
+
+void cache_forwardpropagation(struct node* n) {
+  //Initialize Product registers
+  int childCount = n->childHead->numChildren;  
+  double childvr[(childCount + 1)]; //start index from 1
+  int j = 0;
+  n->prL = (double*)calloc((childCount + 1), sizeof(double));
+  n->prR = (double*)calloc((childCount + 1), sizeof(double));
+  if (n->flag) {
+    /* Multiply child if flag is down and is not zero */
+    struct childList *tempPtr = n->childHead;
+    while (tempPtr != NULL) {
+      j++;
+      int cIndex = tempPtr->childIndex;
+      if (circuit[cIndex]->flag) {
+	n->vr = 0;
+	childvr[j] = 0;
+	//break;
+      }
+      else if (!circuit[cIndex]->flag && circuit[cIndex]->vr != 0) {
+	childvr[j] = circuit[cIndex]->vr;
+      }
+      tempPtr = tempPtr->next;
+    }
+  }
+  else {
+    struct childList *tempPtr = n->childHead;
+    while (tempPtr != NULL) {
+      int cIndex = tempPtr->childIndex;
+      j++;
+      if (circuit[cIndex]->flag) {
+	n->vr = 0;
+	childvr[j] = 0;
+	//break;
+      }
+      else {
+	childvr[j] = circuit[cIndex]->vr;
+      }
+      tempPtr = tempPtr->next;
+    }
+  }
+  /* Calculate products */
+  //j = childCount;
+  n->prL[0] = 1;
+  n->prR[0] = 1;
+  for (int k = 1, j = childCount; k <= childCount; k++, j--) {
+    n->prL[k] = childvr[k] * n->prL[(k-1)];
+    n->prR[k] = childvr[(j)] * n->prR[(k-1)];
+    //printf("index %d, l %d, r %d, prL: %lf prR: %lf\n", index, k, j, n->prL[k], n->prR[k]);
+  }
+  n->vr = n->prL[childCount];
 }
 
 /*Function to perform bit-encoded backpropagation*/
@@ -398,60 +451,9 @@ int main(int argc, char** argv) {
 	
 	//bit_forwardpropagation(n);
 
-	//Initialize Product registers
-	//printf("child: %d \t", childCount);
-	
-	double childvr[(childCount + 1)]; //start index from 1
-	int j = 0;
+	/*Cache back-prop*/
 	n->childHead->numChildren = childCount;
-	n->prL = (double*)calloc((childCount + 1), sizeof(double));
-	n->prR = (double*)calloc((childCount + 1), sizeof(double));
-	//printf("prL %li prR %li\n", sizeof(double), sizeof(n->prR));
-	if (n->flag) {
-	  /* Multiply child if flag is down and is not zero */
-	  struct childList *tempPtr = n->childHead;
-	  while (tempPtr != NULL) {
-	    j++;
-	    int cIndex = tempPtr->childIndex;
-	    if (circuit[cIndex]->flag) {
-	      n->vr = 0;
-	      childvr[j] = 0;
-	      //break;
-	    }
-	    else if (!circuit[cIndex]->flag && circuit[cIndex]->vr != 0) {
-	      childvr[j] = circuit[cIndex]->vr;
-	    }
-	    tempPtr = tempPtr->next;
-	  }
-	}
-	else {
-	  struct childList *tempPtr = n->childHead;
-	  while (tempPtr != NULL) {
-	    int cIndex = tempPtr->childIndex;
-	    j++;
-	    if (circuit[cIndex]->flag) {
-	      n->vr = 0;
-	      childvr[j] = 0;
-	      //break;
-	    }
-	    else {
-	      childvr[j] = circuit[cIndex]->vr;
-	    }
-	    tempPtr = tempPtr->next;
-	  }
-	}
-	/* Calculate products */
-	//j = childCount;
-	n->prL[0] = 1;
-	n->prR[0] = 1;
-	for (int k = 1, j = childCount; k <= childCount; k++, j--) {
-	  n->prL[k] = childvr[k] * n->prL[(k-1)];
-	  n->prR[k] = childvr[(j)] * n->prR[(k-1)];
-	  //printf("index %d, l %d, r %d, prL: %lf prR: %lf\n", index, k, j, n->prL[k], n->prR[k]);
-	}
-	n->vr = n->prL[childCount];
-	//n->vr = n->prR[0];
-	//printf("i %d, prR: %lf\n", index, n->prR[childCount]);
+	cache_forwardpropagation(n);
       }
       circuit[index] = n;
       index++;   
