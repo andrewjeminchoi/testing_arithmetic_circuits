@@ -3,7 +3,7 @@
 #### Description
 An implementation of a feed-forward arithmetic circuit to find marginal probabilities using Cache-propagation. 
 
-The default is cache-propagation, but the code currently supports bit-encoded (as described in Darwiche 2003, JACM) and cache propagation. The bit-encoding propagation always assumes that the AC file is alternating between addition and multiplication nodes. 
+The default is cache-propagation, but the code also supports bit-encoded (as described in Darwiche 2003, JACM). The bit-encoding propagation always assumes that the AC file is alternating between addition and multiplication nodes. 
 
 
 #### Running the program for movie.ac on Linux
